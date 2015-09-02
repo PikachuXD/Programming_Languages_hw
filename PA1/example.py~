@@ -1,0 +1,33 @@
+def readStdin():
+	toReturn = []
+	try:
+		while True:
+			a = int(raw_input().strip())
+			toReturn = [a]+toReturn
+	finally: return toReturn
+
+def getResult(a, a_set):
+	#Set b = a.final of_list
+	if len(a) == 0:
+		return sorted(a_set) 
+	b_set = set([b for _,b in a]) #=== set(map(lambda e:e[1], a))
+	possibles = a_set - b_set
+	if (len(possibles) == 0):
+		return "cycle"
+	next_elt = min(possibles)
+	#eliminate edges
+	#filter(lambda e:e[0] != min, a)
+	#a_set - min
+	a_prime = filter(lambda e:e[0] != next_elt, a)
+	a_set_prime = a_set - set([next_elt])
+	result = getResult(a_prime, a_set_prime)
+	if (result == "cycle"):
+		return "cycle"
+	return [next_elt]+result 
+	#else printf("cycle")
+	
+def main():
+	a = readStdin()
+	print getResult(a, set([b for b,_ in a] + [b for _,b in a]))
+	
+main()

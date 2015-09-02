@@ -1,0 +1,7 @@
+class Main inherits IO {
+	x : Int <- 3;
+	main() : String{
+		case x of y : Bool => "fdsa";
+			  z : String => "asdf"; esac
+	} ;
+} ;

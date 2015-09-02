@@ -1,0 +1,107 @@
+# this is for my machine... running the script as "python plsub..." will ignore this
+#! /usr/local/bin/python
+
+'''
+Wicked submission script yo...
+you will probably need to install the mechanize 
+dependency
+'''
+
+import mechanize
+import base64
+import zipfile
+import sys
+import os
+import re
+
+#### AHHHHH! DANGER! DANGER! WARNING!: READ THIS! #####
+''' 
+netbadge username and password. 
+I encoded mine to make it harder for someone to just read it over my 
+shoulder, but you can just write it unencoded if you'd like. 
+It isnt really secure either way, though -- DO NOT SHARE THIS FILE 
+WITH PASSWORD IN PLAIN TEXT (EVEN IF ENCODED)
+'''
+netbadge_user = 'rk5dy'
+#netbadge_pass = base64.b64decode('optionally_encoced_password_here')
+# <OR >
+netbadge_pass = '1Shiroi2'
+
+submit_page = 'https://church.cs.virginia.edu/4610/'
+tmp_archive = 'script_submit.zip'
+
+assigns = ['pa1', 'pa2', 'pa3', 'pa4t', 'pa4c', 'pa4', 'pa5t', 'pa5c', 'pa5' ]
+
+# zip da files
+def zip_files(filename):
+    zf = zipfile.ZipFile(filename, mode='w')
+    for filename in sys.argv[3:]:
+        zf.write( filename )
+    zf.close()
+
+
+if __name__ == '__main__':
+
+    # throw error if args wrong
+    if len(sys.argv) < 3:
+        print "\nUSAGE:\n     submit.py <'test'|'grade'> <assignment_name> <files>\n"
+        exit(1)
+
+    # processing submission type argument
+    if sys.argv[1].lower() == 'test':
+        submit_type = 'test'
+    elif sys.argv[1].lower() == 'grade':
+        submit_type = 'submit'
+    else: 
+        print "ERROR: " + sys.argv[1] + " is not a valid submission type."
+        exit(1)
+
+    if sys.argv[2].lower() not in assigns:
+        print "ERROR: " + sys.argv[2] + " is not a valid assignment name."
+        exit(1)
+
+    # zip da files
+    try:
+        zip_files(tmp_archive)
+    except Exception as e:
+        os.remove(tmp_archive)
+        print "ERROR: " + str(e).split()[-1] + " not found."
+        exit(1)
+
+    br = mechanize.Browser()
+    # ignore complaints about script hitting server
+    # this might be unethical? .... idk
+    br.set_handle_robots(False)
+
+    '''
+    authenticating through netbadge. I dont think 
+    they can put us in prison for authomating this, 
+    But plaintext password storage is probably breaking the 
+    UVa computing policy somewhere... so be aware I guess.
+    '''
+    print "Authenticating..."
+    br.open(submit_page)
+    br.select_form(nr=1)
+    br.form['user'] = netbadge_user
+    br.form['pass'] = netbadge_pass 
+    br.submit()
+    br.open(submit_page)
+
+    # getting the right form based on assignement spec
+    for f in br.forms():
+        if f['Submit'].lower() == (submit_type + ' ' + sys.argv[2]).lower():
+            br.form = f
+
+    # preparing the form
+    br.form.add_file(open(tmp_archive), 'application/zip', tmp_archive)
+
+    #submitting the form
+    print "Submitting..."
+    r = br.submit().read()
+
+    # parsing and printing the output
+    output = re.search('<pre>((.|\n)*)\(done\)', r)
+    print output.group(1).strip()
+
+    # removing tmp_archive
+    os.remove(tmp_archive)

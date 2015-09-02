@@ -1,0 +1,7 @@
+class Main inherits IO {	
+	main() : String {
+		out_string(in_string().concat(in_string()))	
+	};
+
+};
+
